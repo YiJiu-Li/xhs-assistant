@@ -1,0 +1,32 @@
+# 环境变量（含 API Key）
+.env
+
+# 数据目录（向量库 / SQLite）
+data/
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# Node.js
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# 日志
+*.log

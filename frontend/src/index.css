@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Inter",
+    system-ui, -apple-system, sans-serif;
+  background-color: #fff8f7;
+  color: #1a1a1a;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #ffc2c2;
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ff8fa3;
+}
+
+/* 平滑过渡全局 */
+button, a, input, select, textarea {
+  transition-property: color, background-color, border-color, box-shadow, opacity;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 输入框 focus 样式 */
+textarea:focus, input:focus, select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2.5px rgba(244, 63, 94, 0.25);
+  border-color: #f43f5e !important;
+}
+
+/* 隐藏 range 默认样式 */
+input[type="range"] {
+  -webkit-appearance: none;
+  height: 4px;
+  border-radius: 99px;
+  background: #e4e4e7;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ff2d55;
+  box-shadow: 0 1px 3px rgba(255,45,85,.35);
+}
+input[type="range"]:focus {
+  box-shadow: none;
+  border-color: transparent !important;
+}
