@@ -158,7 +158,7 @@ export default function KnowledgePage() {
               onClick={handleAdd}
               disabled={!addContent.trim()}
               className="px-5 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-40"
-              style={{ background: 'linear-gradient(135deg, #ff6b8a 0%, #ff2d55 100%)', boxShadow: '0 3px 10px rgba(255,45,85,0.35)' }}
+              style={{ background: '#ff2d55', boxShadow: '0 2px 8px rgba(255,45,85,0.2)' }}
             >
               添加文档
             </button>
@@ -188,7 +188,7 @@ export default function KnowledgePage() {
             <button
               onClick={handleSearch}
               className="px-4 py-1.5 rounded-xl text-sm font-semibold text-white"
-              style={{ background: 'linear-gradient(135deg, #ff6b8a 0%, #ff2d55 100%)', boxShadow: '0 2px 8px rgba(255,45,85,0.3)' }}
+              style={{ background: '#ff2d55', boxShadow: '0 2px 6px rgba(255,45,85,0.2)' }}
             >
               搜索
             </button>

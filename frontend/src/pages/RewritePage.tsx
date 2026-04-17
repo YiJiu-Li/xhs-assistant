@@ -83,7 +83,7 @@ export default function RewritePage() {
             <button
               onClick={() => setStyle('')}
               className="px-3.5 py-1.5 rounded-full text-xs font-medium transition-all"
-              style={style === '' ? { background: 'linear-gradient(135deg, #ff6b8a 0%, #ff2d55 100%)', color: '#fff', boxShadow: '0 2px 8px rgba(255,45,85,0.3)', border: '1px solid transparent' } : { background: '#fff8f7', color: '#ff8fa3', border: '1px solid #ffd6d6' }}
+              style={style === '' ? { background: '#ff2d55', color: '#fff', boxShadow: '0 2px 6px rgba(255,45,85,0.2)', border: '1px solid transparent' } : { background: '#fff8f7', color: '#ff8fa3', border: '1px solid #ffd6d6' }}
             >
               ✨ 自动
             </button>
@@ -93,7 +93,7 @@ export default function RewritePage() {
                 onClick={() => setStyle(t.id)}
                 title={t.desc}
                 className="px-3.5 py-1.5 rounded-full text-xs font-medium transition-all"
-                style={style === t.id ? { background: 'linear-gradient(135deg, #ff6b8a 0%, #ff2d55 100%)', color: '#fff', boxShadow: '0 2px 8px rgba(255,45,85,0.3)', border: '1px solid transparent' } : { background: '#fff8f7', color: '#ff8fa3', border: '1px solid #ffd6d6' }}
+                style={style === t.id ? { background: '#ff2d55', color: '#fff', boxShadow: '0 2px 6px rgba(255,45,85,0.2)', border: '1px solid transparent' } : { background: '#fff8f7', color: '#ff8fa3', border: '1px solid #ffd6d6' }}
               >
                 {t.icon} {t.id}
               </button>
@@ -136,7 +136,7 @@ export default function RewritePage() {
             onClick={handleStream}
             disabled={streaming || !content.trim()}
             className="px-5 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-40"
-            style={{ background: 'linear-gradient(135deg, #ff6b8a 0%, #ff2d55 100%)', boxShadow: '0 3px 10px rgba(255,45,85,0.35)' }}
+            style={{ background: '#ff2d55', boxShadow: '0 2px 8px rgba(255,45,85,0.2)' }}
           >
             {streaming ? '生成中…' : '开始改写 →'}
           </button>

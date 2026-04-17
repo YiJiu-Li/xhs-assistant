@@ -164,7 +164,7 @@ export default function ConversationPage() {
       <div className="flex-1 flex flex-col" style={{ background: '#fff8f7' }}>
         {!activeId ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center px-8">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl text-white mb-4" style={{ background: 'linear-gradient(135deg, #ff6b8a 0%, #ff2d55 100%)', boxShadow: '0 6px 20px rgba(255,45,85,0.35)' }}>
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mb-4" style={{ background: '#fff0f3', boxShadow: '0 4px 14px rgba(255,45,85,0.12)' }}>
               💬
             </div>
             <h3 className="text-base font-semibold text-zinc-700 mb-1">开始对话优化</h3>
@@ -172,7 +172,7 @@ export default function ConversationPage() {
             <button
               onClick={handleNewSession}
               className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
-              style={{ background: 'linear-gradient(135deg, #ff6b8a 0%, #ff2d55 100%)', boxShadow: '0 3px 10px rgba(255,45,85,0.35)' }}
+              style={{ background: '#ff2d55', boxShadow: '0 2px 8px rgba(255,45,85,0.2)' }}
             >
               + 新建对话
             </button>
@@ -185,13 +185,13 @@ export default function ConversationPage() {
                 <div key={i} className={`flex items-start gap-2.5 ${m.role === 'human' ? 'flex-row-reverse' : ''}`}>
                   {/* 头像 */}
                   {m.role === 'ai' && (
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5" style={{ background: 'linear-gradient(135deg, #ff6b8a 0%, #ff2d55 100%)' }}>
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5" style={{ background: '#fff0f3', color: '#ff2d55', border: '1px solid #ffd6d6' }}>
                       AI
                     </div>
                   )}
                   {/* 气泡 */}
                   {m.role === 'human' ? (
-                    <div className="max-w-[72%] px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm leading-relaxed text-white" style={{ background: 'linear-gradient(135deg, #ff6b8a 0%, #ff2d55 100%)', boxShadow: '0 2px 8px rgba(255,45,85,0.25)' }}>
+                    <div className="max-w-[72%] px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm leading-relaxed text-white" style={{ background: '#2c2c2e', boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }}>
                       {m.content}
                     </div>
                   ) : (
@@ -252,7 +252,7 @@ export default function ConversationPage() {
                     onClick={() => send(input)}
                     disabled={streaming || !input.trim()}
                     className="px-3 py-1.5 text-xs font-semibold rounded-xl text-white disabled:opacity-40"
-                    style={{ background: 'linear-gradient(135deg, #ff6b8a 0%, #ff2d55 100%)', boxShadow: '0 2px 8px rgba(255,45,85,0.3)' }}
+                    style={{ background: '#ff2d55', boxShadow: '0 2px 6px rgba(255,45,85,0.2)' }}
                   >
                     发送
                   </button>

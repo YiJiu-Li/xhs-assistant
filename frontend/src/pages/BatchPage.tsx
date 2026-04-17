@@ -169,7 +169,7 @@ export default function BatchPage() {
           onClick={runBatch}
           disabled={running || !items.length}
           className="text-sm px-5 py-2 rounded-xl font-semibold text-white disabled:opacity-40"
-          style={{ background: 'linear-gradient(135deg, #ff6b8a 0%, #ff2d55 100%)', boxShadow: '0 3px 10px rgba(255,45,85,0.35)' }}
+          style={{ background: '#ff2d55', boxShadow: '0 2px 8px rgba(255,45,85,0.2)' }}
         >
           {running ? '处理中…' : '开始批量改写 →'}
         </button>
@@ -181,7 +181,7 @@ export default function BatchPage() {
           <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#ffe0e0' }}>
             <div
               className="h-full rounded-full transition-all duration-500"
-              style={{ width: progress.total ? `${(progress.current / progress.total) * 100}%` : '0%', background: 'linear-gradient(90deg, #ff6b8a, #ff2d55)' }}
+              style={{ width: progress.total ? `${(progress.current / progress.total) * 100}%` : '0%', background: '#ff2d55' }}
             />
           </div>
           <p className="text-xs text-zinc-400">{progress.current} / {progress.total} 条已处理</p>
