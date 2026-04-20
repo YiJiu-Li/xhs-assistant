@@ -25,9 +25,12 @@ export default function KnowledgePage() {
   const [addStyle, setAddStyle] = useState('种草推荐')
   const [addMeta, setAddMeta] = useState('')
   const [addMsg, setAddMsg] = useState('')
+  const [addLoading, setAddLoading] = useState(false)
 
   async function handleAdd() {
     if (!addContent.trim()) return
+    setAddLoading(true)
+    setAddMsg('')
     try {
       await api.post('/knowledge/add', {
         title: addTitle.trim() || addContent.slice(0, 30),
@@ -41,7 +44,9 @@ export default function KnowledgePage() {
       setAddMsg('✅ 添加成功')
       qc.invalidateQueries({ queryKey: ['kb-stats'] })
     } catch {
-      setAddMsg('❌ 添加失败')
+      setAddMsg('❌ 添加失败，请检查后端服务是否正在运行')
+    } finally {
+      setAddLoading(false)
     }
   }
 
@@ -53,12 +58,18 @@ export default function KnowledgePage() {
 
   // Search tab
   const [query, setQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<{ content: string; score: number }[]>([])
+  const [searchResults, setSearchResults] = useState<{ content: string; style: string; title: string }[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
 
   async function handleSearch() {
     if (!query.trim()) return
-    const r = await api.post<{ results: { content: string; score: number }[] }>('/knowledge/search', { query, top_k: 5 })
-    setSearchResults(r.data.results)
+    setSearchLoading(true)
+    try {
+      const r = await api.post<{ results: { content: string; style: string; title: string }[] }>('/knowledge/search', { query, top_k: 5 })
+      setSearchResults(r.data.results)
+    } finally {
+      setSearchLoading(false)
+    }
   }
 
   // Manage tab
@@ -183,11 +194,11 @@ export default function KnowledgePage() {
           <div className="flex gap-3 pt-1">
             <button
               onClick={handleAdd}
-              disabled={!addContent.trim()}
+              disabled={!addContent.trim() || addLoading}
               className="px-5 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-40"
               style={{ background: '#ff2d55', boxShadow: '0 2px 8px rgba(255,45,85,0.2)' }}
             >
-              添加文档
+              {addLoading ? '添加中…' : '添加文档'}
             </button>
             <button
               onClick={handleInitSamples}
@@ -217,7 +228,7 @@ export default function KnowledgePage() {
               className="px-4 py-1.5 rounded-xl text-sm font-semibold text-white"
               style={{ background: '#ff2d55', boxShadow: '0 2px 6px rgba(255,45,85,0.2)' }}
             >
-              搜索
+              {searchLoading ? '搜索中…' : '搜索'}
             </button>
           </div>
           <div className="space-y-2.5">
@@ -225,10 +236,13 @@ export default function KnowledgePage() {
               <div key={i} className="bg-white rounded-2xl p-4" style={{ border: '1px solid #ffe0e0', boxShadow: '0 1px 6px rgba(255,45,85,0.06)' }}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] font-semibold" style={{ color: '#ffaab8' }}>结果 {i + 1}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: '#fff0f3', color: '#ff2d55', border: '1px solid #ffd6d6' }}>
-                    相关度 {(r.score * 100).toFixed(0)}%
-                  </span>
+                  {r.style && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: '#fff0f3', color: '#ff2d55', border: '1px solid #ffd6d6' }}>
+                      {r.style}
+                    </span>
+                  )}
                 </div>
+                {r.title && <p className="text-xs font-semibold mb-1" style={{ color: '#ff8fa3' }}>{r.title}</p>}
                 <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#444' }}>{r.content}</p>
               </div>
             ))}
@@ -255,7 +269,9 @@ export default function KnowledgePage() {
               <div key={doc.id} className="bg-white rounded-2xl p-4 flex gap-3" style={{ border: '1px solid #ffe0e0', boxShadow: '0 1px 6px rgba(255,45,85,0.06)' }}>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] text-zinc-400 font-mono mb-1.5 truncate">ID: {doc.id}</p>
-                  <p className="text-sm text-zinc-600 leading-relaxed line-clamp-3">{doc.content}</p>
+                  <p className="text-xs font-semibold mb-1" style={{ color: '#ff8fa3' }}>{doc.title}</p>
+                  <p className="text-xs text-zinc-400 mb-1">{doc.style} · {doc.source}</p>
+                  <p className="text-sm text-zinc-600 leading-relaxed line-clamp-3">{doc.content_preview}</p>
                 </div>
                 <button
                   onClick={() => handleDelete(doc.id)}

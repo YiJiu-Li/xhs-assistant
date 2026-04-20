@@ -35,8 +35,11 @@ export interface KBStats {
 
 export interface KBDocument {
   id: string
-  content: string
-  metadata: Record<string, unknown>
+  title: string
+  style: string
+  source: string
+  hashtags: string
+  content_preview: string
 }
 
 // ---- helpers ----
@@ -75,6 +78,6 @@ export async function fetchKBStats(): Promise<KBStats> {
 }
 
 export async function fetchKBDocs(): Promise<KBDocument[]> {
-  const r = await api.get<{ documents: KBDocument[] }>('/knowledge/list')
-  return r.data.documents
+  const r = await api.get<KBDocument[]>('/knowledge/list')
+  return r.data
 }
