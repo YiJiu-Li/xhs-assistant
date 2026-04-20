@@ -3,14 +3,15 @@
 import json
 import os
 from pathlib import Path
+from typing import Optional, List
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
 from config import CHROMA_DB_PATH, COLLECTION_NAME
 
 # 单例缓存 — 模型和向量库只在进程启动时加载一次（470MB，低功耗设备关键优化）
-_embeddings: HuggingFaceEmbeddings | None = None
-_vectorstore: Chroma | None = None
+_embeddings: Optional[HuggingFaceEmbeddings] = None
+_vectorstore: Optional[Chroma] = None
 
 
 def get_embeddings() -> HuggingFaceEmbeddings:
