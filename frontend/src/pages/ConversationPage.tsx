@@ -9,6 +9,7 @@ import {
 import type { ChatMessage, ConversationSession } from '../lib/api'
 import { useApiConfig } from '../contexts/ApiContext'
 import MarkdownMessage from '../components/MarkdownMessage'
+import { useLocalStorage } from '../hooks/useLocalStorage'
 
 const QUICK_ACTIONS = [
   '请帮我优化这段文案的开头，让它更吸引眼球',
@@ -25,7 +26,7 @@ export default function ConversationPage() {
   const qc = useQueryClient()
   const { data: sessions = [] } = useQuery({ queryKey: ['sessions'], queryFn: fetchSessions })
 
-  const [activeId, setActiveId] = useState<string | null>(null)
+  const [activeId, setActiveId] = useLocalStorage<string | null>('conv:activeId', null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
@@ -34,7 +35,13 @@ export default function ConversationPage() {
 
   useEffect(() => {
     if (!activeId) return
-    fetchHistory(activeId).then(setMessages)
+    fetchHistory(activeId)
+      .then(setMessages)
+      .catch(() => {
+        // 会话已不存在（被删除或后端重启），清除失效 id
+        setActiveId(null)
+        setMessages([])
+      })
   }, [activeId])
 
   useEffect(() => {

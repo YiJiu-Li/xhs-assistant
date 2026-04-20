@@ -4,16 +4,17 @@ import { fetchTemplates, api } from '../lib/api'
 import { useApiConfig } from '../contexts/ApiContext'
 import MarkdownMessage from '../components/MarkdownMessage'
 import XhsPreviewCard from '../components/XhsPreviewCard'
+import { useLocalStorage } from '../hooks/useLocalStorage'
 
 export default function RewritePage() {
   const { model, temperature } = useApiConfig()
   const { data: templates = [] } = useQuery({ queryKey: ['templates'], queryFn: fetchTemplates })
 
-  const [content, setContent] = useState('')
-  const [style, setStyle] = useState('')
-  const [useRag, setUseRag] = useState(false)
-  const [output, setOutput] = useState('')
-  const [hashtags, setHashtags] = useState<string[]>([])
+  const [content, setContent] = useLocalStorage('rw:content', '')
+  const [style, setStyle] = useLocalStorage('rw:style', '')
+  const [useRag, setUseRag] = useLocalStorage('rw:useRag', false)
+  const [output, setOutput] = useLocalStorage('rw:output', '')
+  const [hashtags, setHashtags] = useLocalStorage<string[]>('rw:hashtags', [])
   const [streaming, setStreaming] = useState(false)
   const [viewMode, setViewMode] = useState<'text' | 'preview'>('text')
   const abortRef = useRef<AbortController | null>(null)
