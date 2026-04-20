@@ -8,24 +8,34 @@ from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
 from config import CHROMA_DB_PATH, COLLECTION_NAME
 
+# 单例缓存 — 模型和向量库只在进程启动时加载一次（470MB，低功耗设备关键优化）
+_embeddings: HuggingFaceEmbeddings | None = None
+_vectorstore: Chroma | None = None
 
-def get_embeddings():
-    """本地 Embedding 模型（pptoken.org 不支持 /embeddings 接口，故用本地模型）"""
-    return HuggingFaceEmbeddings(
-        model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
-        model_kwargs={"device": "cpu"},
-        encode_kwargs={"normalize_embeddings": True},
-    )
+
+def get_embeddings() -> HuggingFaceEmbeddings:
+    """获取 Embedding 模型单例（首次调用时加载，后续复用）"""
+    global _embeddings
+    if _embeddings is None:
+        _embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+            model_kwargs={"device": "cpu"},
+            encode_kwargs={"normalize_embeddings": True},
+        )
+    return _embeddings
 
 
 def get_vectorstore() -> Chroma:
-    """获取或初始化向量数据库"""
-    os.makedirs(CHROMA_DB_PATH, exist_ok=True)
-    return Chroma(
-        collection_name=COLLECTION_NAME,
-        embedding_function=get_embeddings(),
-        persist_directory=CHROMA_DB_PATH,
-    )
+    """获取向量数据库单例"""
+    global _vectorstore
+    if _vectorstore is None:
+        os.makedirs(CHROMA_DB_PATH, exist_ok=True)
+        _vectorstore = Chroma(
+            collection_name=COLLECTION_NAME,
+            embedding_function=get_embeddings(),
+            persist_directory=CHROMA_DB_PATH,
+        )
+    return _vectorstore
 
 
 def load_sample_docs() -> list[Document]:
