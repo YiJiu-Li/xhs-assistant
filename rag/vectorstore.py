@@ -141,7 +141,7 @@ def get_rag_context(query: str, style: str = None, top_k: int = 2) -> str:
     return "\n\n".join(parts)
 
 
-def list_all_documents() -> list[dict]:
+def list_all_documents() -> List[dict]:
     """列出知识库中所有文档元数据"""
     vs = get_vectorstore()
     result = vs.get()
