@@ -57,20 +57,20 @@ export default function KnowledgePage() {
 
   async function handleSearch() {
     if (!query.trim()) return
-    const r = await api.post<{ results: { content: string; score: number }[] }>('/knowledge/search', { query, k: 5 })
+    const r = await api.post<{ results: { content: string; score: number }[] }>('/knowledge/search', { query, top_k: 5 })
     setSearchResults(r.data.results)
   }
 
   // Manage tab
   async function handleDelete(id: string) {
-    await api.delete(`/knowledge/delete/${id}`)
+    await api.delete(`/knowledge/${id}`)
     refetchDocs()
     refetchStats()
   }
 
   async function handleClear() {
     if (!window.confirm('确定要清空知识库吗？')) return
-    await api.post('/knowledge/clear')
+    await api.delete('/knowledge/clear')
     refetchDocs()
     refetchStats()
   }

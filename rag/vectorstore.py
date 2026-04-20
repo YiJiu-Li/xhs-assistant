@@ -10,7 +10,7 @@ from config import CHROMA_DB_PATH, COLLECTION_NAME
 
 
 def get_embeddings():
-    """获取本地 Embedding 模型（无需 API Key，首次使用自动下载）"""
+    """本地 Embedding 模型（pptoken.org 不支持 /embeddings 接口，故用本地模型）"""
     return HuggingFaceEmbeddings(
         model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
         model_kwargs={"device": "cpu"},
