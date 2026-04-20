@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchTemplates, api } from '../lib/api'
 import { useApiConfig } from '../contexts/ApiContext'
 import MarkdownMessage from '../components/MarkdownMessage'
+import XhsPreviewCard from '../components/XhsPreviewCard'
 
 export default function RewritePage() {
   const { model, temperature } = useApiConfig()
@@ -14,6 +15,7 @@ export default function RewritePage() {
   const [output, setOutput] = useState('')
   const [hashtags, setHashtags] = useState<string[]>([])
   const [streaming, setStreaming] = useState(false)
+  const [viewMode, setViewMode] = useState<'text' | 'preview'>('text')
   const abortRef = useRef<AbortController | null>(null)
 
   async function handleStream() {
@@ -148,11 +150,23 @@ export default function RewritePage() {
         <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1px solid #ffe0e0', boxShadow: '0 2px 12px rgba(255,45,85,0.06)' }}>
           {/* 卡片头 */}
           <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #ffe4e4', background: '#fff8f7' }}>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full" style={{ background: '#ff2d55' }} />
-              <span className="text-xs font-semibold" style={{ color: '#ff8fa3' }}>改写结果</span>
+            <div className="flex items-center gap-1">
+              {/* 视图切换 tab */}
+              {(['text', 'preview'] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setViewMode(m)}
+                  className="px-3 py-1 rounded-lg text-xs font-medium transition-all"
+                  style={viewMode === m
+                    ? { background: '#ff2d55', color: '#fff' }
+                    : { background: 'transparent', color: '#ffaab8' }
+                  }
+                >
+                  {m === 'text' ? '📄 原文' : '📱 XHS 预览'}
+                </button>
+              ))}
               {streaming && (
-                <span className="text-[10px] animate-pulse" style={{ color: '#ffaab8' }}>生成中…</span>
+                <span className="text-[10px] ml-1 animate-pulse" style={{ color: '#ffaab8' }}>生成中…</span>
               )}
             </div>
             <div className="flex items-center gap-3">
@@ -171,12 +185,23 @@ export default function RewritePage() {
               </button>
             </div>
           </div>
-          {/* 内容 */}
-          <div className="px-5 py-4 text-sm text-zinc-700 leading-7">
-            <MarkdownMessage content={output} streaming={streaming} />
-          </div>
-          {/* 标签 */}
-          {hashtags.length > 0 && (
+
+          {/* 原文模式 */}
+          {viewMode === 'text' && (
+            <div className="px-5 py-4 text-sm text-zinc-700 leading-7">
+              <MarkdownMessage content={output} streaming={streaming} />
+            </div>
+          )}
+
+          {/* XHS 预览模式 */}
+          {viewMode === 'preview' && (
+            <div className="px-4 py-5" style={{ background: '#f7f7f7' }}>
+              <XhsPreviewCard text={output} streaming={streaming} />
+            </div>
+          )}
+
+          {/* 标签（原文模式下显示） */}
+          {viewMode === 'text' && hashtags.length > 0 && (
             <div className="px-5 py-3 flex flex-wrap gap-1.5" style={{ borderTop: '1px solid #ffe4e4', background: '#fff8f7' }}>
               {hashtags.map((tag) => (
                 <span key={tag} className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ background: '#fff0f3', color: '#ff2d55', border: '1px solid #ffd6d6' }}>
