@@ -72,7 +72,9 @@ def init_vectorstore_with_samples() -> Chroma:
     return vs
 
 
-def add_document(title: str, content: str, style: str, hashtags: str = "", source: str = "用户添加") -> bool:
+def add_document(
+    title: str, content: str, style: str, hashtags: str = "", source: str = "用户添加"
+) -> bool:
     """向知识库添加新文案"""
     vs = get_vectorstore()
     full_content = f"【标题】{title}\n\n{content}"
@@ -86,19 +88,23 @@ def add_document(title: str, content: str, style: str, hashtags: str = "", sourc
         },
     )
     vs.add_documents([doc])
+    invalidate_search_cache()
     return True
 
 
+_search_cache: dict[tuple, list[Document]] = {}
+_CACHE_MAX = 200  # 最多缓存 200 条查询（32GB 内存充裕，可适当放大）
+
+
 def search_similar(query: str, style: str = None, top_k: int = 3) -> list[Document]:
-    """相似度搜索爆款文案参考"""
+    """相似度搜索爆款文案参考（带内存缓存，相同查询直接返回）"""
+    cache_key = (query.strip(), style, top_k)
+    if cache_key in _search_cache:
+        return _search_cache[cache_key]
+
     vs = get_vectorstore()
     if style:
-        results = vs.similarity_search(
-            query,
-            k=top_k,
-            filter={"style": style},
-        )
-        # 如果按风格过滤后结果不足，补充全库搜索
+        results = vs.similarity_search(query, k=top_k, filter={"style": style})
         if len(results) < top_k:
             extra = vs.similarity_search(query, k=top_k - len(results))
             existing_ids = {d.metadata.get("id", d.page_content[:20]) for d in results}
@@ -108,7 +114,19 @@ def search_similar(query: str, style: str = None, top_k: int = 3) -> list[Docume
                     results.append(d)
     else:
         results = vs.similarity_search(query, k=top_k)
+
+    if len(_search_cache) >= _CACHE_MAX:
+        # 简单淘汰：清掉最早的一半
+        keys = list(_search_cache.keys())
+        for k in keys[: _CACHE_MAX // 2]:
+            del _search_cache[k]
+    _search_cache[cache_key] = results
     return results
+
+
+def invalidate_search_cache() -> None:
+    """知识库内容变更后清除搜索缓存"""
+    _search_cache.clear()
 
 
 def get_rag_context(query: str, style: str = None, top_k: int = 2) -> str:
@@ -130,14 +148,18 @@ def list_all_documents() -> list[dict]:
     for i, doc_id in enumerate(result["ids"]):
         meta = result["metadatas"][i] if result["metadatas"] else {}
         content = result["documents"][i] if result["documents"] else ""
-        docs.append({
-            "id": doc_id,
-            "title": meta.get("title", "未知"),
-            "style": meta.get("style", "未知"),
-            "source": meta.get("source", "未知"),
-            "hashtags": meta.get("hashtags", ""),
-            "content_preview": content[:80] + "..." if len(content) > 80 else content,
-        })
+        docs.append(
+            {
+                "id": doc_id,
+                "title": meta.get("title", "未知"),
+                "style": meta.get("style", "未知"),
+                "source": meta.get("source", "未知"),
+                "hashtags": meta.get("hashtags", ""),
+                "content_preview": (
+                    content[:80] + "..." if len(content) > 80 else content
+                ),
+            }
+        )
     return docs
 
 
@@ -145,6 +167,7 @@ def delete_document(doc_id: str) -> bool:
     """从知识库删除指定文档"""
     vs = get_vectorstore()
     vs.delete([doc_id])
+    invalidate_search_cache()
     return True
 
 
@@ -154,4 +177,5 @@ def clear_all_documents() -> bool:
     result = vs.get()
     if result["ids"]:
         vs.delete(result["ids"])
+    invalidate_search_cache()
     return True
