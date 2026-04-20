@@ -3,6 +3,11 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchModels } from '../lib/api'
 import { useApiConfig } from '../contexts/ApiContext'
 
+const FALLBACK_MODELS = [
+  'gpt-5.4', 'gpt-5.3-codex', 'gpt-5.2-codex',
+  'gpt-5.3-codex-spark', 'gpt-5.1-codex-mini', 'codex-mini-latest',
+]
+
 const navItems = [
   { to: '/rewrite',      icon: '✍️', label: '文案改写',  desc: '智能风格改写' },
   { to: '/conversation', icon: '💬', label: '对话优化',  desc: '多轮对话打磨' },
@@ -12,7 +17,10 @@ const navItems = [
 
 export default function Layout() {
   const { model, temperature, setModel, setTemperature } = useApiConfig()
-  const { data: models = [] } = useQuery({ queryKey: ['models'], queryFn: fetchModels })
+  const { data: remoteModels = [] } = useQuery({ queryKey: ['models'], queryFn: fetchModels })
+  const modelIds = remoteModels.length > 0
+    ? remoteModels.map((m) => m.id)
+    : FALLBACK_MODELS
 
   return (
     <div className="flex h-screen" style={{ background: '#fff8f7' }}>
@@ -79,9 +87,9 @@ export default function Layout() {
               className="w-full text-xs rounded-xl px-2.5 py-2 cursor-pointer"
               style={{ color: '#333', background: '#fff5f5', border: '1px solid #ffd6d6', outline: 'none' }}
             >
-              {models.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.id}
+              {modelIds.map((id) => (
+                <option key={id} value={id}>
+                  {id}
                 </option>
               ))}
             </select>

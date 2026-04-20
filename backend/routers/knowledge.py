@@ -17,7 +17,11 @@ async def get_stats():
     styles: dict[str, int] = {}
     for d in docs:
         styles[d["style"]] = styles.get(d["style"], 0) + 1
-    return {"total": len(docs), "by_style": styles}
+    return {
+        "total_documents": len(docs),
+        "collection_name": "xhs_samples",
+        "by_style": styles,
+    }
 
 
 @router.get("/list", response_model=List[DocItem])
