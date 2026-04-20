@@ -3,18 +3,18 @@
 import json
 import os
 from pathlib import Path
-from langchain_openai import OpenAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
-from config import API_BASE_URL, API_KEY, CHROMA_DB_PATH, COLLECTION_NAME
+from config import CHROMA_DB_PATH, COLLECTION_NAME
 
 
 def get_embeddings():
-    """获取 Embedding 模型（使用自定义 API 端点）"""
-    return OpenAIEmbeddings(
-        model="text-embedding-ada-002",
-        openai_api_key=API_KEY,
-        openai_api_base=API_BASE_URL,
+    """获取本地 Embedding 模型（无需 API Key，首次使用自动下载）"""
+    return HuggingFaceEmbeddings(
+        model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+        model_kwargs={"device": "cpu"},
+        encode_kwargs={"normalize_embeddings": True},
     )
 
 

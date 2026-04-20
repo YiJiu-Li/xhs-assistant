@@ -20,18 +20,22 @@ export default function KnowledgePage() {
   })
 
   // Add tab
+  const [addTitle, setAddTitle] = useState('')
   const [addContent, setAddContent] = useState('')
+  const [addStyle, setAddStyle] = useState('种草推荐')
   const [addMeta, setAddMeta] = useState('')
   const [addMsg, setAddMsg] = useState('')
 
   async function handleAdd() {
     if (!addContent.trim()) return
     try {
-      let metadata: Record<string, unknown> = {}
-      if (addMeta.trim()) {
-        try { metadata = JSON.parse(addMeta) } catch { metadata = { note: addMeta } }
-      }
-      await api.post('/knowledge/add', { content: addContent, metadata })
+      await api.post('/knowledge/add', {
+        title: addTitle.trim() || addContent.slice(0, 30),
+        content: addContent,
+        style: addStyle,
+        hashtags: '',
+      })
+      setAddTitle('')
       setAddContent('')
       setAddMeta('')
       setAddMsg('✅ 添加成功')
@@ -128,6 +132,29 @@ export default function KnowledgePage() {
       {tab === 'add' && (
         <div className="bg-white rounded-2xl p-5 space-y-4" style={{ border: '1px solid #ffe0e0', boxShadow: '0 2px 12px rgba(255,45,85,0.06)' }}>
           <div>
+            <label className="text-xs font-semibold block mb-2" style={{ color: '#ffaab8' }}>标题（可选，留空自动提取）</label>
+            <input
+              value={addTitle}
+              onChange={(e) => setAddTitle(e.target.value)}
+              placeholder="文案标题…"
+              className="w-full rounded-xl px-4 py-2.5 text-sm"
+              style={{ border: '1px solid #ffd6d6', background: '#fff8f7', color: '#333' }}
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold block mb-2" style={{ color: '#ffaab8' }}>文案风格</label>
+            <select
+              value={addStyle}
+              onChange={(e) => setAddStyle(e.target.value)}
+              className="w-full rounded-xl px-4 py-2.5 text-sm"
+              style={{ border: '1px solid #ffd6d6', background: '#fff8f7', color: '#333' }}
+            >
+              {['种草推荐', '日常分享', '测评对比', '干货教程', '情感共鸣', '搞笑娱乐'].map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+          <div>
             <label className="text-xs font-semibold block mb-2" style={{ color: '#ffaab8' }}>文档内容</label>
             <textarea
               value={addContent}
@@ -139,11 +166,11 @@ export default function KnowledgePage() {
             />
           </div>
           <div>
-            <label className="text-xs font-semibold block mb-2" style={{ color: '#ffaab8' }}>元数据（可选，JSON 或纯文本）</label>
+            <label className="text-xs font-semibold block mb-2" style={{ color: '#ffaab8' }}>备注（可选）</label>
             <input
               value={addMeta}
               onChange={(e) => setAddMeta(e.target.value)}
-              placeholder='{"source": "手动", "category": "种草"}'
+              placeholder='来源备注，如：手动添加、品牌合作…'
               className="w-full rounded-xl px-4 py-2.5 text-sm"
               style={{ border: '1px solid #ffd6d6', background: '#fff8f7', color: '#333' }}
             />
