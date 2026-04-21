@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchModels } from '../lib/api'
 import { useApiConfig } from '../contexts/ApiContext'
+import { useAuth } from '../contexts/AuthContext'
 
 const FALLBACK_MODELS = [
   'gpt-5.4', 'gpt-5.3-codex', 'gpt-5.2-codex',
@@ -9,15 +10,16 @@ const FALLBACK_MODELS = [
 ]
 
 const navItems = [
-  { to: '/rewrite',      icon: '✍️', label: '文案改写',  desc: '智能风格改写' },
-  { to: '/conversation', icon: '💬', label: '对话优化',  desc: '多轮对话打磨' },
-  { to: '/batch',        icon: '⚡', label: '批量处理',  desc: '批量生成文案' },
-  { to: '/knowledge',   icon: '📚', label: '知识库',    desc: '参考案例管理' },
+  { to: '/rewrite',      icon: '✍️', label: '文案改写',  desc: '智能风格改写',  requireAuth: true },
+  { to: '/conversation', icon: '💬', label: '对话优化',  desc: '多轮对话打磨',  requireAuth: true  },
+  { to: '/batch',        icon: '⚡', label: '批量处理',  desc: '批量生成文案',  requireAuth: true },
+  { to: '/knowledge',   icon: '📚', label: '知识库',    desc: '参考案例管理',  requireAuth: true  },
 ]
 
 export default function Layout() {
   const { model, temperature, setModel, setTemperature } = useApiConfig()
   const { data: remoteModels = [] } = useQuery({ queryKey: ['models'], queryFn: fetchModels })
+  const { user, logout } = useAuth()
   const modelIds = remoteModels.length > 0
     ? remoteModels.map((m) => m.id)
     : FALLBACK_MODELS
@@ -48,7 +50,7 @@ export default function Layout() {
 
         {/* 导航 */}
         <nav className="flex-1 px-3 py-3 space-y-0.5">
-          {navItems.map(({ to, icon, label, desc }) => (
+          {navItems.map(({ to, icon, label, desc, requireAuth }) => (
             <NavLink
               key={to}
               to={to}
@@ -66,7 +68,12 @@ export default function Layout() {
                 <>
                   <span className="text-base w-5 text-center">{icon}</span>
                   <div className="flex-1 min-w-0">
-                    <div className="leading-tight">{label}</div>
+                    <div className="leading-tight flex items-center gap-1">
+                      {label}
+                      {requireAuth && !user && (
+                        <span className="text-[9px] px-1 rounded" style={{ background: '#fff0f3', color: '#ffaab8' }}>登录</span>
+                      )}
+                    </div>
                     {isActive && (
                       <div className="text-[10px] mt-0.5 font-normal" style={{ color: '#ff8fa3' }}>{desc}</div>
                     )}
@@ -77,8 +84,77 @@ export default function Layout() {
           ))}
         </nav>
 
-        {/* 底部设置 */}
+        {/* 底部设置 + 用户信息 */}
         <div className="px-4 py-4 space-y-4" style={{ borderTop: '1px solid #ffe4e4' }}>
+          {/* 用户卡片 */}
+          {user ? (() => {
+            const quota = user.quota ?? { used: 0, limit: 100000 }
+            const pct = Math.min(100, Math.round((quota.used / quota.limit) * 100))
+            const barColor = pct >= 90 ? '#ef4444' : pct >= 70 ? '#f97316' : '#ff2d55'
+            const remaining = quota.limit - quota.used
+            return (
+              <div
+                className="rounded-2xl p-3 space-y-2.5"
+                style={{ background: 'linear-gradient(135deg, #fff0f3 0%, #fff8fa 100%)', border: '1px solid #ffd6d6' }}
+              >
+                {/* 头像 + 用户名 + 退出 */}
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center text-sm font-bold text-white"
+                    style={{ background: 'linear-gradient(135deg, #ff6b8a, #ff2d55)', boxShadow: '0 2px 8px rgba(255,45,85,0.3)' }}
+                  >
+                    {user.username.slice(0, 1).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate" style={{ color: '#1a1a1a' }}>{user.username}</p>
+                    <p className="text-[10px]" style={{ color: '#ff8fa3' }}>
+                      {pct >= 90 ? '⚠️ 配额即将用完' : '已登录'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={logout}
+                    className="shrink-0 text-[11px] px-2 py-1 rounded-lg transition-colors"
+                    style={{ color: '#ff8fa3', background: '#fff0f3', border: '1px solid #ffd6d6' }}
+                    title="退出登录"
+                  >
+                    退出
+                  </button>
+                </div>
+
+                {/* Token 进度条 */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] font-medium" style={{ color: '#999' }}>Token 用量</span>
+                    <span className="text-[10px] font-mono font-semibold" style={{ color: barColor }}>
+                      {pct}%
+                    </span>
+                  </div>
+                  <div className="w-full rounded-full h-1.5" style={{ background: '#ffe4e4' }}>
+                    <div
+                      className="h-1.5 rounded-full transition-all"
+                      style={{ width: `${pct}%`, background: barColor }}
+                    />
+                  </div>
+                  <div className="flex justify-between mt-1">
+                    <span className="text-[9px]" style={{ color: '#bbb' }}>
+                      已用 {quota.used.toLocaleString()}
+                    </span>
+                    <span className="text-[9px]" style={{ color: '#bbb' }}>
+                      剩余 {remaining.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )
+          })() : (
+            <NavLink
+              to="/rewrite"
+              className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-medium transition-colors"
+              style={{ background: '#fff0f3', color: '#ff2d55', border: '1px solid #ffd6d6' }}
+            >
+              <span>👤</span> 登录 / 注册
+            </NavLink>
+          )}
           <div>
             <label className="text-xs font-medium block mb-1.5" style={{ color: '#999' }}>模型选择</label>
             <select

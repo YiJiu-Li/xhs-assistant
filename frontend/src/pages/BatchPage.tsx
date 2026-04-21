@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import * as XLSX from 'xlsx'
 import { useApiConfig } from '../contexts/ApiContext'
+import { useAuth } from '../contexts/AuthContext'
 
 interface BatchItem {
   content: string
@@ -11,6 +12,7 @@ interface BatchItem {
 
 export default function BatchPage() {
   const { model, temperature } = useApiConfig()
+  const { user, refreshQuota } = useAuth()
   const [items, setItems] = useState<BatchItem[]>([])
   const [textInput, setTextInput] = useState('')
   const [style, setStyle] = useState('')
@@ -49,8 +51,11 @@ export default function BatchPage() {
     try {
       const resp = await fetch('/api/batch/stream', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents, style: style || undefined, model, temperature }),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(user?.token ? { 'Authorization': `Bearer ${user.token}` } : {}),
+        },
+        body: JSON.stringify({ texts: contents, style: style || undefined, model, temperature }),
       })
       const reader = resp.body!.getReader()
       const dec = new TextDecoder()
@@ -69,9 +74,10 @@ export default function BatchPage() {
           } else if (chunk.type === 'result') {
             setItems((prev) => {
               const copy = [...prev]
-              copy[chunk.index] = {
-                ...copy[chunk.index],
-                result: chunk.result,
+              const idx = chunk.index - 1  // backend sends 1-based index
+              copy[idx] = {
+                ...copy[idx],
+                result: chunk.rewritten,
                 status: chunk.error ? 'error' : 'done',
               }
               return copy
@@ -85,6 +91,7 @@ export default function BatchPage() {
       console.error(e)
     } finally {
       setRunning(false)
+      refreshQuota()
     }
   }
 

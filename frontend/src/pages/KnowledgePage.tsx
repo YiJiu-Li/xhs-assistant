@@ -73,8 +73,42 @@ export default function KnowledgePage() {
   }
 
   // Manage tab
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState<{ title: string; style: string; content: string; hashtags: string }>({
+    title: '', style: '', content: '', hashtags: '',
+  })
+  const [editLoading, setEditLoading] = useState(false)
+
+  function openEdit(doc: KBDocument) {
+    // content 形如 "【标题】xxx\n\nyyy"，编辑时只取正文部分（去掉标题行）
+    const raw = doc.content
+    const bodyStart = raw.indexOf('\n\n')
+    const bodyContent = bodyStart !== -1 ? raw.slice(bodyStart + 2) : raw
+    setEditForm({
+      title: doc.title,
+      style: doc.style,
+      content: bodyContent,
+      hashtags: doc.hashtags,
+    })
+    setEditingId(doc.id)
+  }
+
+  async function handleSaveEdit() {
+    if (!editingId) return
+    setEditLoading(true)
+    try {
+      await api.put(`/knowledge/${editingId}`, editForm)
+      setEditingId(null)
+      refetchDocs()
+      refetchStats()
+    } finally {
+      setEditLoading(false)
+    }
+  }
+
   async function handleDelete(id: string) {
     await api.delete(`/knowledge/${id}`)
+    if (editingId === id) setEditingId(null)
     refetchDocs()
     refetchStats()
   }
@@ -82,6 +116,7 @@ export default function KnowledgePage() {
   async function handleClear() {
     if (!window.confirm('确定要清空知识库吗？')) return
     await api.delete('/knowledge/clear')
+    setEditingId(null)
     refetchDocs()
     refetchStats()
   }
@@ -266,19 +301,113 @@ export default function KnowledgePage() {
           </div>
           <div className="space-y-2.5">
             {(docs as KBDocument[]).map((doc) => (
-              <div key={doc.id} className="bg-white rounded-2xl p-4 flex gap-3" style={{ border: '1px solid #ffe0e0', boxShadow: '0 1px 6px rgba(255,45,85,0.06)' }}>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] text-zinc-400 font-mono mb-1.5 truncate">ID: {doc.id}</p>
-                  <p className="text-xs font-semibold mb-1" style={{ color: '#ff8fa3' }}>{doc.title}</p>
-                  <p className="text-xs text-zinc-400 mb-1">{doc.style} · {doc.source}</p>
-                  <p className="text-sm text-zinc-600 leading-relaxed line-clamp-3">{doc.content_preview}</p>
+              <div
+                key={doc.id}
+                className="bg-white rounded-2xl overflow-hidden"
+                style={{ border: editingId === doc.id ? '1.5px solid #ff2d55' : '1px solid #ffe0e0', boxShadow: '0 1px 6px rgba(255,45,85,0.06)', transition: 'border-color 0.2s' }}
+              >
+                {/* 卡片头部：始终显示 */}
+                <div className="flex items-start gap-3 p-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] text-zinc-400 font-mono mb-1.5 truncate">ID: {doc.id}</p>
+                    <p className="text-xs font-semibold mb-0.5" style={{ color: '#ff8fa3' }}>{doc.title}</p>
+                    <p className="text-xs text-zinc-400">{doc.style} · {doc.source}</p>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    {editingId !== doc.id ? (
+                      <button
+                        onClick={() => openEdit(doc)}
+                        title="编辑"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-sm text-zinc-400 hover:text-blue-400 hover:bg-blue-50 transition-colors"
+                      >
+                        ✏️
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setEditingId(null)}
+                        title="收起"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-xs text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50 transition-colors"
+                      >
+                        ↑
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDelete(doc.id)}
+                      title="删除"
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-xs text-zinc-400 hover:text-red-400 hover:bg-red-50 transition-colors"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={() => handleDelete(doc.id)}
-                  className="text-xs text-zinc-400 hover:text-red-400 shrink-0 hover:bg-red-50 w-7 h-7 rounded-lg flex items-center justify-center"
-                >
-                  ✕
-                </button>
+
+                {/* 折叠：预览 or 编辑表单 */}
+                {editingId !== doc.id ? (
+                  <div className="px-4 pb-4 -mt-1">
+                    <p className="text-sm text-zinc-600 leading-relaxed line-clamp-3">{doc.content_preview}</p>
+                  </div>
+                ) : (
+                  <div className="px-4 pb-4 space-y-3" style={{ borderTop: '1px solid #fff0f3' }}>
+                    <div className="pt-3">
+                      <label className="text-[10px] font-semibold block mb-1" style={{ color: '#ffaab8' }}>标题</label>
+                      <input
+                        value={editForm.title}
+                        onChange={(e) => setEditForm(f => ({ ...f, title: e.target.value }))}
+                        className="w-full rounded-xl px-3 py-2 text-sm"
+                        style={{ border: '1px solid #ffd6d6', background: '#fff8f7', color: '#333' }}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-semibold block mb-1" style={{ color: '#ffaab8' }}>风格</label>
+                      <select
+                        value={editForm.style}
+                        onChange={(e) => setEditForm(f => ({ ...f, style: e.target.value }))}
+                        className="w-full rounded-xl px-3 py-2 text-sm"
+                        style={{ border: '1px solid #ffd6d6', background: '#fff8f7', color: '#333' }}
+                      >
+                        {['种草推荐', '日常分享', '测评对比', '干货教程', '情感共鸣', '搞笑娱乐'].map(s => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-semibold block mb-1" style={{ color: '#ffaab8' }}>正文内容</label>
+                      <textarea
+                        value={editForm.content}
+                        onChange={(e) => setEditForm(f => ({ ...f, content: e.target.value }))}
+                        rows={6}
+                        className="w-full rounded-xl px-3 py-2.5 text-sm resize-y leading-relaxed"
+                        style={{ border: '1px solid #ffd6d6', background: '#fff8f7', color: '#333' }}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-semibold block mb-1" style={{ color: '#ffaab8' }}>标签（空格分隔）</label>
+                      <input
+                        value={editForm.hashtags}
+                        onChange={(e) => setEditForm(f => ({ ...f, hashtags: e.target.value }))}
+                        placeholder="#标签1 #标签2"
+                        className="w-full rounded-xl px-3 py-2 text-sm"
+                        style={{ border: '1px solid #ffd6d6', background: '#fff8f7', color: '#333' }}
+                      />
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        onClick={handleSaveEdit}
+                        disabled={editLoading || !editForm.title.trim() || !editForm.content.trim()}
+                        className="px-4 py-1.5 rounded-xl text-xs font-semibold text-white disabled:opacity-40"
+                        style={{ background: '#ff2d55', boxShadow: '0 2px 6px rgba(255,45,85,0.2)' }}
+                      >
+                        {editLoading ? '保存中…' : '保存'}
+                      </button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="px-4 py-1.5 rounded-xl text-xs font-medium text-zinc-500 border border-zinc-200 hover:bg-zinc-50"
+                      >
+                        取消
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
             {docs.length === 0 && (

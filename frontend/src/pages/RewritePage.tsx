@@ -2,19 +2,21 @@ import { useState, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchTemplates, api } from '../lib/api'
 import { useApiConfig } from '../contexts/ApiContext'
+import { useAuth } from '../contexts/AuthContext'
 import MarkdownMessage from '../components/MarkdownMessage'
 import XhsPreviewCard from '../components/XhsPreviewCard'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 
 export default function RewritePage() {
   const { model, temperature } = useApiConfig()
-  const { data: templates = [] } = useQuery({ queryKey: ['templates'], queryFn: fetchTemplates })
+  const { user, refreshQuota } = useAuth()
+  const { data: templates = [], isLoading: templatesLoading } = useQuery({ queryKey: ['templates'], queryFn: fetchTemplates })
 
   const [content, setContent] = useLocalStorage('rw:content', '')
   const [style, setStyle] = useLocalStorage('rw:style', '')
   const [useRag, setUseRag] = useLocalStorage('rw:useRag', false)
-  const [output, setOutput] = useLocalStorage('rw:output', '')
-  const [hashtags, setHashtags] = useLocalStorage<string[]>('rw:hashtags', [])
+  const [output, setOutput] = useState('')
+  const [hashtags, setHashtags] = useState<string[]>([])
   const [streaming, setStreaming] = useState(false)
   const [viewMode, setViewMode] = useState<'text' | 'preview'>('text')
   const abortRef = useRef<AbortController | null>(null)
@@ -29,10 +31,18 @@ export default function RewritePage() {
     try {
       const resp = await fetch('/api/rewrite/stream', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(user?.token ? { 'Authorization': `Bearer ${user.token}` } : {}),
+        },
         body: JSON.stringify({ content, style: style || undefined, model, temperature, use_rag: useRag }),
         signal: abortRef.current.signal,
       })
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ detail: `HTTP ${resp.status}` }))
+        setOutput(`⚠️ ${err.detail ?? err.message ?? 'request failed'}`)
+        return
+      }
       const reader = resp.body!.getReader()
       const dec = new TextDecoder()
       let buf = ''
@@ -54,6 +64,7 @@ export default function RewritePage() {
       if (e instanceof Error && e.name !== 'AbortError') setOutput((p) => p + `\n[连接错误] ${e.message}`)
     } finally {
       setStreaming(false)
+      refreshQuota()
     }
   }
 
@@ -90,17 +101,21 @@ export default function RewritePage() {
             >
               ✨ 自动
             </button>
-            {templates.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setStyle(t.id)}
-                title={t.desc}
-                className="px-3.5 py-1.5 rounded-full text-xs font-medium transition-all"
-                style={style === t.id ? { background: '#ff2d55', color: '#fff', boxShadow: '0 2px 6px rgba(255,45,85,0.2)', border: '1px solid transparent' } : { background: '#fff8f7', color: '#ff8fa3', border: '1px solid #ffd6d6' }}
-              >
-                {t.icon} {t.id}
-              </button>
-            ))}
+            {templatesLoading ? (
+              <span className="text-xs px-3 py-1.5" style={{ color: '#ffaab8' }}>加载中…</span>
+            ) : (
+              templates.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setStyle(t.id)}
+                  title={t.desc}
+                  className="px-3.5 py-1.5 rounded-full text-xs font-medium transition-all"
+                  style={style === t.id ? { background: '#ff2d55', color: '#fff', boxShadow: '0 2px 6px rgba(255,45,85,0.2)', border: '1px solid transparent' } : { background: '#fff8f7', color: '#ff8fa3', border: '1px solid #ffd6d6' }}
+                >
+                  {t.icon} {t.id}
+                </button>
+              ))
+            )}
           </div>
         </div>
 
@@ -116,14 +131,20 @@ export default function RewritePage() {
 
         {/* 操作栏 */}
         <div className="flex items-center gap-4 mt-4">
-          <label className="flex items-center gap-2 text-sm cursor-pointer select-none" style={{ color: '#999' }}>
+          <label
+            className="flex items-center gap-2 text-sm select-none"
+            style={{ color: user ? '#999' : '#ccc', cursor: user ? 'pointer' : 'not-allowed' }}
+            title={user ? '' : '登录后可使用知识库增强改写'}
+          >
             <input
               type="checkbox"
-              checked={useRag}
-              onChange={(e) => setUseRag(e.target.checked)}
+              checked={user ? useRag : false}
+              onChange={(e) => user && setUseRag(e.target.checked)}
+              disabled={!user}
               className="accent-rose-500 w-3.5 h-3.5"
             />
             参考知识库
+            {!user && <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: '#fff0f3', color: '#ffaab8' }}>登录</span>}
           </label>
           <div className="flex-1" />
           {streaming && (

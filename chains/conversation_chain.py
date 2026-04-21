@@ -2,25 +2,10 @@
 
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import HumanMessage, AIMessage
-from langchain_core.output_parsers import StrOutputParser
 from config import API_BASE_URL, API_KEY, DEFAULT_MODEL, DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
 
 
-def get_llm(model: str = DEFAULT_MODEL, temperature: float = DEFAULT_TEMPERATURE):
-    return ChatOpenAI(
-        model=model,
-        temperature=temperature,
-        max_tokens=DEFAULT_MAX_TOKENS,
-        openai_api_key=API_KEY,
-        openai_api_base=API_BASE_URL,
-    )
-
-
-def build_conversation_chain(model: str = DEFAULT_MODEL):
-    """构建多轮对话 Chain"""
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", """你是一位专业的小红书文案优化顾问，帮助用户打磨和优化文案内容。
+CONVERSATION_SYSTEM_PROMPT = """你是一位专业的小红书文案优化顾问，帮助用户打磨和优化文案内容。
 
 你的能力：
 - 根据用户需求调整文案风格、语气、结构
@@ -40,21 +25,31 @@ def build_conversation_chain(model: str = DEFAULT_MODEL):
 - 耐心倾听用户的具体需求
 - 每次修改后说明改动点
 - 主动询问是否满意，引导进一步优化
-- 保持友好、专业的态度"""),
+- 保持友好、专业的态度
+
+范围限制：
+- 仅回答小红书内容创作与发布表达相关问题
+- 若用户请求与小红书无关，直接回复："当前仅支持小红书内容相关问题，请提供文案改写、标题优化或标签生成等需求。"""
+
+
+def get_llm(model: str = DEFAULT_MODEL, temperature: float = DEFAULT_TEMPERATURE):
+    return ChatOpenAI(
+        model=model,
+        temperature=temperature,
+        max_tokens=DEFAULT_MAX_TOKENS,
+        openai_api_key=API_KEY,
+        openai_api_base=API_BASE_URL,
+        stream_usage=True,
+    )
+
+
+def build_conversation_chain(model: str = DEFAULT_MODEL):
+    """构建多轮对话 Chain"""
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", CONVERSATION_SYSTEM_PROMPT),
         MessagesPlaceholder(variable_name="history"),
         ("human", "{input}"),
     ])
 
-    chain = prompt | get_llm(model) | StrOutputParser()
+    chain = prompt | get_llm(model)
     return chain
-
-
-def convert_history(history: list[dict]) -> list:
-    """将 Streamlit session 格式的历史转换为 LangChain Messages"""
-    messages = []
-    for msg in history:
-        if msg["role"] == "user":
-            messages.append(HumanMessage(content=msg["content"]))
-        elif msg["role"] == "assistant":
-            messages.append(AIMessage(content=msg["content"]))
-    return messages

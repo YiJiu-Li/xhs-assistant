@@ -1,19 +1,47 @@
-# React + TypeScript + Vite
+# 小红书 AI 文案助手 — 前端
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+基于 React 19 + TypeScript + Vite + Tailwind CSS v4 构建的前端应用。
 
-Currently, two official plugins are available:
+## 开发环境启动
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+cd frontend
+npm install
+npm run dev        # 开发服务器：http://localhost:5173
+```
 
-## React Compiler
+> 前端默认请求 `http://localhost:8000`，请确保后端已启动。
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 构建生产包
 
-## Expanding the ESLint configuration
+```bash
+npm run build      # 输出到 dist/
+npm run preview    # 本地预览生产包
+```
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 目录结构
+
+```
+src/
+├── pages/          # 四大功能页面（改写 / 对话 / 批量 / 知识库）
+├── components/     # 公共组件（Layout、MarkdownMessage、ProtectedRoute 等）
+├── contexts/       # 全局上下文（AuthContext、ApiConfigContext）
+├── hooks/          # 自定义 Hook
+└── types/          # TypeScript 类型定义
+```
+
+## 技术栈
+
+| 库 | 用途 |
+|---|---|
+| React 19 | UI 框架 |
+| TypeScript | 类型安全 |
+| Vite | 构建工具 |
+| Tailwind CSS v4 | 原子化样式 |
+| TanStack Query | 服务端状态管理 |
+| React Router v7 | 客户端路由 |
+| Axios | HTTP 请求 |
+
 
 ```js
 export default defineConfig([

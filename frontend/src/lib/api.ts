@@ -39,6 +39,7 @@ export interface KBDocument {
   style: string
   source: string
   hashtags: string
+  content: string
   content_preview: string
 }
 

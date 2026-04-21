@@ -8,6 +8,7 @@ import {
 } from '../lib/api'
 import type { ChatMessage, ConversationSession } from '../lib/api'
 import { useApiConfig } from '../contexts/ApiContext'
+import { useAuth } from '../contexts/AuthContext'
 import MarkdownMessage from '../components/MarkdownMessage'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 
@@ -23,6 +24,7 @@ const QUICK_ACTIONS = [
 
 export default function ConversationPage() {
   const { model, temperature } = useApiConfig()
+  const { user, refreshQuota } = useAuth()
   const qc = useQueryClient()
   const { data: sessions = [] } = useQuery({ queryKey: ['sessions'], queryFn: fetchSessions })
 
@@ -76,10 +78,23 @@ export default function ConversationPage() {
     try {
       const resp = await fetch(`/api/conversation/${activeId}/message`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(user?.token ? { 'Authorization': `Bearer ${user.token}` } : {}),
+        },
         body: JSON.stringify({ message: text, model, temperature }),
         signal: abortRef.current.signal,
       })
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ detail: `HTTP ${resp.status}` }))
+        const msg = err.detail ?? err.message ?? 'request failed'
+        setMessages((prev) => {
+          const copy = [...prev]
+          copy[copy.length - 1] = { role: 'ai', content: `⚠️ ${msg}` }
+          return copy
+        })
+        return
+      }
       const reader = resp.body!.getReader()
       const dec = new TextDecoder()
       let buf = ''
@@ -112,6 +127,7 @@ export default function ConversationPage() {
       }
     } finally {
       setStreaming(false)
+      refreshQuota()
     }
   }
 

@@ -17,25 +17,31 @@ os.makedirs(_DATA_DIR, exist_ok=True)
 
 
 def _ensure_sessions_table():
-    """确保 sessions 元数据表存在"""
+    """确保 sessions 元数据表存在（含 user_id 列）"""
     conn = sqlite3.connect(_DB_PATH)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS sessions (
             session_id TEXT PRIMARY KEY,
-            created_at TEXT NOT NULL
+            created_at TEXT NOT NULL,
+            user_id    TEXT NOT NULL DEFAULT ''
         )
     """)
+    # 兼容旧表：若 user_id 列不存在则添加
+    try:
+        conn.execute("ALTER TABLE sessions ADD COLUMN user_id TEXT NOT NULL DEFAULT ''")
+    except sqlite3.OperationalError:
+        pass  # 列已存在
     conn.commit()
     conn.close()
 
 
-def create_session_record(session_id: str):
-    """记录 session 创建时间"""
+def create_session_record(session_id: str, user_id: str = ""):
+    """记录 session 创建时间和所属用户"""
     _ensure_sessions_table()
     conn = sqlite3.connect(_DB_PATH)
     conn.execute(
-        "INSERT OR IGNORE INTO sessions (session_id, created_at) VALUES (?, ?)",
-        (session_id, datetime.now().strftime("%Y-%m-%d %H:%M"))
+        "INSERT OR IGNORE INTO sessions (session_id, created_at, user_id) VALUES (?, ?, ?)",
+        (session_id, datetime.now().strftime("%Y-%m-%d %H:%M"), user_id)
     )
     conn.commit()
     conn.close()

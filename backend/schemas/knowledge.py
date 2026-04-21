@@ -11,6 +11,13 @@ class AddDocRequest(BaseModel):
     hashtags: str = Field(default="")
 
 
+class UpdateDocRequest(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    content: str = Field(..., min_length=1, max_length=5000)
+    style: str = Field(default="种草推荐")
+    hashtags: str = Field(default="")
+
+
 class SearchRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=500)
     style: Optional[str] = Field(default=None)
@@ -23,4 +30,5 @@ class DocItem(BaseModel):
     style: str
     source: str
     hashtags: str
+    content: str
     content_preview: str

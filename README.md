@@ -1,6 +1,6 @@
-# 🌸 小红书 AI 文案助手
+# 🌸 XHS Copilot · 小红书 AI 文案创作助手
 
-> 基于 FastAPI + React + LangChain 的 AI 写作工具，帮你轻松打造爆款小红书文案。
+> 基于 FastAPI + React + LangChain 的 AI 写作平台，集文案改写、对话优化、批量处理、RAG 知识库于一体，帮你轻松打造爆款小红书内容。
 
 ![预览](https://img.shields.io/badge/版本-1.0.0-ff2d55?style=flat-square) ![Python](https://img.shields.io/badge/Python-3.10+-3776ab?style=flat-square&logo=python&logoColor=white) ![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react&logoColor=white) ![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688?style=flat-square&logo=fastapi&logoColor=white)
 
@@ -14,6 +14,9 @@
 | 💬 **对话优化** | 多轮对话打磨文案，保存完整会话历史 |
 | 📦 **批量处理** | 支持文本粘贴 / Excel 上传，批量生成改写结果并导出 |
 | 📚 **知识库管理** | 基于 ChromaDB 的 RAG 向量知识库，支持添加、搜索、管理参考案例 |
+| 🔐 **用户认证** | JWT 登录/注册，SQLite 用户库，Token 自动刷新 |
+| 🪙 **Token 配额** | 每用户独立 Token 额度，实时统计消耗，超限自动拦截 |
+| 🛡️ **内容守护** | 三层过滤（关键词白/黑名单 → LLM 快速分类 → 系统提示兜底），仅处理小红书相关内容 |
 
 ---
 
@@ -64,15 +67,14 @@ OPENAI_BASE_URL=https://api.openai.com/v1   # 可换成国内代理地址
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-### 3. 启动后端
+### 3. 安装后端依赖并启动
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 
-cd backend
-uvicorn main:app --reload --port 8000
+python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
 ```
 
 ### 4. 启动前端
@@ -92,12 +94,14 @@ npm run dev
 ```
 xhs-assistant/
 ├── backend/                # FastAPI 后端
-│   ├── routers/            # 路由：改写 / 对话 / 批量 / 知识库
+│   ├── routers/            # 路由：改写 / 对话 / 批量 / 知识库 / 认证
+│   ├── auth/               # JWT 签发与解析、Token 配额管理
 │   ├── schemas/            # Pydantic 数据模型
-│   └── db/                 # SQLite 会话存储
+│   └── db/                 # SQLite 用户库 & 会话存储
 ├── chains/                 # LangChain 链：改写 / 对话 / 批量
 ├── rag/                    # RAG 知识库（ChromaDB）
 ├── templates/              # 小红书风格提示词模板
+├── content_scope.py        # 内容守护（三层过滤）
 ├── frontend/               # React 前端
 │   └── src/
 │       ├── pages/          # 四大功能页面
